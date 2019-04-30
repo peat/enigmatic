@@ -1,5 +1,6 @@
 mod character_set;
 mod cipher;
+mod enigmatic;
 mod machine;
 mod plugboard;
 mod reflector;
@@ -7,29 +8,10 @@ mod rotor;
 mod rotor_set;
 
 use character_set::CharacterSet;
-use cipher::*;
+use enigmatic::Enigmatic;
 use machine::*;
 use reflector::*;
 use rotor::Rotor;
-
-fn encode_str(m: &mut Machine, s: &str) -> Result<String, String> {
-    let mut encoded: Vec<char> = vec![];
-    for c in s.chars() {
-        let next_machine = match m.next() {
-            // advance the machine
-            None => return Err("Machine iteration failed!".to_owned()),
-            Some(n) => n,
-        };
-        let encoded_char = match next_machine.encode(c) {
-            // encode the character
-            Ok(o) => o,
-            Err(e) => return Err(e),
-        };
-        encoded.push(encoded_char);
-    }
-
-    Ok(encoded.iter().collect())
-}
 
 fn main() {
     let chars = CharacterSet::new("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -44,30 +26,23 @@ fn main() {
     println!(
         "Machine:\n  {} rotors (random, ascending, descending)\n  flipped reflector\n  {} connected plugs\n",
         m.rotor_set.rotors.len(),
-        m.plugboard.connections.len()
+        m.plugboard.encoder.len()
     );
 
-    println!("Encrypting sample string: {:?}\n", sample);
+    print!("{:?} -> ", sample);
 
-    let encoded = match encode_str(&mut m, sample) {
+    let encoded = match Enigmatic::encode_str(&mut m, sample) {
         Ok(s) => s,
-        Err(e) => {
-            println!("ARGH => {}", e);
-            std::process::exit(1);
-        }
+        Err(e) => panic!("ARGH => {}", e),
     };
 
-    println!("\nEncrypted string: {:?}", encoded);
-    println!("\nresetting rotors and decrypting ... \n");
-    m.reset();
+    print!("{:?} -> ", encoded);
+    let _ = m.reset();
 
-    let decoded = match encode_str(&mut m, &encoded) {
+    let decoded = match Enigmatic::encode_str(&mut m, &encoded) {
         Ok(s) => s,
-        Err(e) => {
-            println!("ARGH => {}", e);
-            std::process::exit(1);
-        }
+        Err(e) => panic!("ARGH => {}", e),
     };
 
-    println!("\nDecrypted: {:?}", decoded);
+    println!("{:?}", decoded);
 }

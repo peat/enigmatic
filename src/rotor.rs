@@ -2,11 +2,11 @@ use crate::cipher::*;
 
 #[derive(Debug, Clone)]
 pub struct Rotor {
-    pub values: Substitution<usize>,
+    pub values: DirectedEncoder<usize>,
     pub position: usize,
 }
 
-impl Cipher<usize> for Rotor {
+impl DirectedCipher<usize> for Rotor {
     fn encode(&self, input: usize) -> Result<usize, String> {
         self.values.encode(self.wrap(input + self.position))
     }
@@ -35,18 +35,18 @@ impl Iterator for Rotor {
 
 impl Rotor {
     pub fn ascending(size: usize) -> Self {
-        Self::from(Substitution::ascending(size))
+        Self::from(DirectedEncoder::ascending(size))
     }
 
     pub fn descending(size: usize) -> Self {
-        Self::from(Substitution::descending(size))
+        Self::from(DirectedEncoder::descending(size))
     }
 
     pub fn random(size: usize) -> Self {
-        Self::from(Substitution::random(size))
+        Self::from(DirectedEncoder::random(size))
     }
 
-    pub fn from(values: Substitution<usize>) -> Self {
+    pub fn from(values: DirectedEncoder<usize>) -> Self {
         let position = 0;
         Self { values, position }
     }
@@ -55,9 +55,10 @@ impl Rotor {
         self.values.len()
     }
 
-    pub fn set_position(&mut self, position: usize) -> Result<usize, &str> {
-        self.position = self.wrap(position);
-        Ok(self.position)
+    pub fn set_position(&self, position: usize) -> Result<Self, String> {
+        let mut r = self.clone();
+        r.position = self.wrap(position);
+        Ok(r)
     }
 
     fn wrap(&self, v: usize) -> usize {

@@ -1,66 +1,50 @@
+use crate::cipher::*;
+
 #[derive(Debug, Clone)]
 pub struct PlugBoard {
-    pub connections: Vec<Connection>,
+    pub encoder: SymmetricEncoder<usize>,
+}
+
+impl SymmetricCipher<usize> for PlugBoard {
+    fn encode(&self, value: usize) -> Result<usize, String> {
+        // this particular encoder passes through any values it can't find
+        match self.encoder.encode(value) {
+            Ok(v) => Ok(v),
+            Err(_) => Ok(value),
+        }
+    }
 }
 
 impl PlugBoard {
     pub fn new() -> Self {
+        // by default, the plug board doesn't have any connections in it
         Self {
-            connections: vec![],
+            encoder: SymmetricEncoder::empty(),
         }
-    }
-
-    pub fn encode(&self, a: usize) -> usize {
-        for c in &self.connections {
-            if let Some(good) = c.connected_to(a) {
-                return good;
-            }
-        }
-        return a;
     }
 
     // on success, returns the new connection; on failure,
     // returns the connection that already exists.
-    pub fn connect(&mut self, a: usize, b: usize) -> Result<Connection, String> {
-        if self.is_connected(a) || self.is_connected(b) {
-            return Err("PlugBoard: already connected.".to_owned());
-        }
-        let c = Connection { a, b };
-        self.connections.push(c);
-        return Ok(c);
-    }
-
-    pub fn disconnect(&mut self, a: usize) {
-        self.connections.retain(|&c| c.connected_to(a).is_none());
-    }
-
-    pub fn is_connected(&self, a: usize) -> bool {
-        for c in &self.connections {
-            if c.connected_to(a).is_some() {
-                return true;
+    pub fn connect(&self, a: usize, b: usize) -> Result<Self, String> {
+        match self.encoder.pair(a, b) {
+            Ok(encoder) => {
+                let mut output = self.clone();
+                output.encoder = encoder;
+                Ok(output)
             }
+            Err(e) => Err(e),
         }
-        return false;
     }
-}
 
-#[derive(Debug, Clone, Copy)]
-pub struct Connection {
-    pub a: usize,
-    pub b: usize,
-}
-
-impl Connection {
-    pub fn connected_to(&self, x: usize) -> Option<usize> {
-        if self.a == x {
-            return Some(self.b);
+    pub fn disconnect(&self, a: usize) -> Result<Self, String> {
+        match self.encoder.unpair(a) {
+            Ok(encoder) => {
+                let mut output = self.clone();
+                output.encoder = encoder;
+                Ok(output)
+            }
+            Err(e) => Err(e),
         }
-
-        if self.b == x {
-            return Some(self.a);
-        }
-
-        return None;
     }
 }
 
@@ -71,17 +55,17 @@ mod tests {
     #[test]
     fn it_encodes() {
         let mut p = PlugBoard::new();
-        assert_eq!(p.encode(5), 5);
+        assert_eq!(p.encode(5), Ok(5));
 
         assert!(p.connect(5, 9).is_ok());
-        assert_eq!(p.encode(5), 9);
-        assert_eq!(p.encode(9), 5);
+        assert_eq!(p.encode(5), Ok(9));
+        assert_eq!(p.encode(9), Ok(5));
 
         assert!(p.connect(2, 9).is_err());
         assert!(p.connect(5, 2).is_err());
 
         p.disconnect(5);
-        assert_eq!(p.encode(5), 5);
-        assert_eq!(p.encode(9), 9);
+        assert_eq!(p.encode(5), Ok(5));
+        assert_eq!(p.encode(9), Ok(9));
     }
 }

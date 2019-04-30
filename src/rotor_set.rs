@@ -9,11 +9,9 @@ pub struct RotorSet {
 impl Iterator for RotorSet {
     type Item = Self;
     fn next(&mut self) -> Option<Self> {
-        let mut new_rotors = self.rotors.clone();
-
         // always advance the first rotor
         let mut advance_next = true;
-        for r in &mut new_rotors {
+        for r in &mut self.rotors {
             if advance_next {
                 *r = r.next().unwrap();
                 advance_next = false;
@@ -23,12 +21,11 @@ impl Iterator for RotorSet {
             }
         }
 
-        self.rotors = new_rotors;
         Some(self.clone())
     }
 }
 
-impl Cipher<usize> for RotorSet {
+impl DirectedCipher<usize> for RotorSet {
     fn encode(&self, value: usize) -> Result<usize, String> {
         let mut new_value = value;
         for r in &self.rotors {
@@ -65,26 +62,30 @@ impl RotorSet {
         rs
     }
 
+    pub fn with_rotors(rotors: Vec<Rotor>) -> Self {
+        Self { rotors }
+    }
+
     pub fn positions(&self) -> Vec<usize> {
         self.rotors.iter().map(|r| r.position).collect()
     }
 
-    pub fn set_positions(&mut self, positions: &[usize]) -> Result<bool, &str> {
-        if positions.len() != self.rotors.len() {
-            return Err("Number of positions doesn't match number of rotors");
-        }
+    pub fn set_positions(&self, positions: &[usize]) -> Result<Self, String> {
+        // merge the positions with rotors
+        let merged = positions.iter().zip(self.rotors.iter());
 
-        for idx in 0..positions.len() {
-            self.rotors[idx].set_position(positions[idx]);
-        }
+        // create a new set of rotors in those positions
+        let results: Result<Vec<Rotor>, String> = merged.map(|(p, r)| r.set_position(*p)).collect();
 
-        Ok(true)
+        // woo!
+        match results {
+            Ok(rotors) => Ok(Self::with_rotors(rotors)),
+            Err(e) => Err(e),
+        }
     }
 
-    pub fn reset_positions(&self) -> Self {
-        let mut rs = self.clone();
-        let positions = vec![0; rs.rotors.len()];
-        rs.set_positions(&positions);
-        rs
+    pub fn reset_positions(&self) -> Result<Self, String> {
+        let positions = vec![0; self.rotors.len()];
+        self.set_positions(&positions)
     }
 }

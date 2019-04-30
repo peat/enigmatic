@@ -21,9 +21,10 @@ impl CharacterSet {
     }
 
     pub fn decode(&self, i: usize) -> Result<char, String> {
-        match i >= self.characters.len() {
-            true => return Err("Dictionary: index out of bounds".to_owned()),
-            false => return Ok(self.characters[i]),
+        if i >= self.characters.len() {
+            Err("Dictionary: index out of bounds".to_owned())
+        } else {
+            Ok(self.characters[i])
         }
     }
 }

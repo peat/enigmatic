@@ -26,19 +26,12 @@ impl Iterator for Machine {
     }
 }
 
-impl Cipher<char> for Machine {
+impl DirectedCipher<char> for Machine {
     fn encode(&self, input: char) -> Result<char, String> {
-        let i: usize = match self.character_set.encode(input) {
-            Ok(c) => c,
-            Err(e) => return Err(e),
-        };
-
-        let e: usize = match self.process(i) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-
-        self.character_set.decode(e)
+        self.character_set
+            .encode(input)
+            .and_then(|i| self.encode_usize(i))
+            .and_then(|e| self.character_set.decode(e))
     }
 
     fn decode(&self, value: char) -> Result<char, String> {
@@ -50,7 +43,7 @@ impl Machine {
     pub fn new(character_set: CharacterSet) -> Self {
         let set_len = character_set.len();
         Machine {
-            character_set: character_set,
+            character_set,
             rotor_set: RotorSet::new(),
             reflector: Reflector::flipped(set_len), // default
             plugboard: PlugBoard::new(),
@@ -70,43 +63,30 @@ impl Machine {
         new_machine
     }
 
-    pub fn reset(&mut self) {
-        self.rotor_set = self.rotor_set.reset_positions();
+    pub fn with_rotor_set(&self, rotor_set: RotorSet) -> Self {
+        let mut m = self.clone();
+        m.rotor_set = rotor_set;
+        m
     }
 
-    fn process(&self, input: usize) -> Result<usize, String> {
-        let mut value = input;
-        print!("{} -> ", value);
+    pub fn reset(&self) -> Result<Self, String> {
+        match self.rotor_set.reset_positions() {
+            Ok(rs) => Ok(self.with_rotor_set(rs)),
+            Err(e) => Err(e),
+        }
+    }
 
-        // first, pass through the plug board
-        value = self.plugboard.encode(value);
-        print!("PB -> {} -> ", value);
-
-        // second, pass through the encoding rotors in order
-        value = match self.rotor_set.encode(value) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-        print!("RE -> {} -> ", value);
-
-        // third, hit the reflector
-        value = match self.reflector.encode(value) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-        print!("X -> {} -> ", value);
-
-        // fourth, pass back through the rotors in reverse order
-        value = match self.rotor_set.decode(value) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-        print!("RD -> {} -> ", value);
-
-        // finally, pass back through the plug board
-        value = self.plugboard.encode(value);
-        println!("PB -> {}", value);
-
-        Ok(value)
+    fn encode_usize(&self, input: usize) -> Result<usize, String> {
+        self.plugboard
+            // first, pass through the plug board
+            .encode(input)
+            // second, pass through the encoding rotors in order
+            .and_then(|v| self.rotor_set.encode(v))
+            // third, hit the reflector
+            .and_then(|v| self.reflector.encode(v))
+            // fourth, pass back through the rotors in reverse order
+            .and_then(|v| self.rotor_set.decode(v))
+            // finally, pass back through the plug board
+            .and_then(|v| self.plugboard.encode(v))
     }
 }
