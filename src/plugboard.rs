@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlugBoard {
     pub connections: Vec<Connection>,
 }
@@ -21,9 +21,9 @@ impl PlugBoard {
 
     // on success, returns the new connection; on failure,
     // returns the connection that already exists.
-    pub fn connect(&mut self, a: usize, b: usize) -> Result<Connection, &str> {
+    pub fn connect(&mut self, a: usize, b: usize) -> Result<Connection, String> {
         if self.is_connected(a) || self.is_connected(b) {
-            return Err("PlugBoard: already connected.");
+            return Err("PlugBoard: already connected.".to_owned());
         }
         let c = Connection { a, b };
         self.connections.push(c);

@@ -1,48 +1,105 @@
-use rand::prelude::*;
+use crate::cipher::*;
 
 #[derive(Debug, Clone)]
 pub struct Rotor {
-    pub outputs: Vec<usize>,
-    pub index: usize,
+    pub values: Substitution<usize>,
+    pub position: usize,
+}
+
+impl Cipher<usize> for Rotor {
+    fn encode(&self, input: usize) -> Result<usize, String> {
+        self.values.encode(self.wrap(input + self.position))
+    }
+
+    fn decode(&self, input: usize) -> Result<usize, String> {
+        match self.values.decode(input) {
+            Ok(v) => {
+                // pad the value to prevent underflowing
+                Ok(self.wrap(self.len() + v - self.position))
+            }
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl Iterator for Rotor {
+    type Item = Rotor;
+    fn next(&mut self) -> Option<Self> {
+        match self.set_position(self.position + 1) {
+            // advance by one
+            Ok(_) => Some(self.clone()),
+            Err(_) => None,
+        }
+    }
 }
 
 impl Rotor {
-    pub fn cleartext(size: usize) -> Self {
-        let index = 0;
-        let mut outputs = vec![];
-        for i in 0..size {
-            outputs.push(i);
-        }
-        return Rotor { outputs, index };
+    pub fn ascending(size: usize) -> Self {
+        Self::from(Substitution::ascending(size))
+    }
+
+    pub fn descending(size: usize) -> Self {
+        Self::from(Substitution::descending(size))
     }
 
     pub fn random(size: usize) -> Self {
-        let index = 0;
-        let mut outputs: Vec<usize> = (0..size).collect();
-        outputs.shuffle(&mut rand::thread_rng());
-        return Rotor { outputs, index };
+        Self::from(Substitution::random(size))
     }
 
-    pub fn encode(&self, a: usize) -> Result<usize, &str> {
-        if a >= self.outputs.len() {
-            return Err("Rotor: Out of bounds access");
-        }
+    pub fn from(values: Substitution<usize>) -> Self {
+        let position = 0;
+        Self { values, position }
+    }
 
-        return Ok(self.outputs[a]);
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub fn set_position(&mut self, position: usize) -> Result<usize, &str> {
+        self.position = self.wrap(position);
+        Ok(self.position)
+    }
+
+    fn wrap(&self, v: usize) -> usize {
+        v % self.values.len()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Rotor;
+    use crate::rotor::*;
 
     #[test]
-    fn it_encodes() {
-        let c = Rotor::cleartext(10);
-        assert_eq!(c.encode(5), Ok(5));
+    fn test_roundtrips() {
+        let mut r = Rotor::random(10);
 
-        assert!(c.encode(9).is_ok());
-        assert!(c.encode(10).is_err());
-        assert!(c.encode(11).is_err());
+        // round trip test all values
+        for i in 0..r.len() {
+            assert!(can_roundtrip(&r, i));
+        }
+
+        // see how it goes with incrementing the position
+        for p in 0..r.len() {
+            for i in 0..r.len() {
+                r.set_position(p);
+                assert!(can_roundtrip(&r, i));
+            }
+        }
+    }
+
+    fn can_roundtrip(r: &Rotor, v: usize) -> bool {
+        if let Ok(encoded) = r.encode(v) {
+            if let Ok(decoded) = r.decode(encoded) {
+                if v == decoded {
+                    return true;
+                } else {
+                    println!(
+                        "{:?} FAILED with position {}: {} -> {} -> {}",
+                        r, r.position, v, encoded, decoded
+                    );
+                }
+            }
+        };
+        false
     }
 }
