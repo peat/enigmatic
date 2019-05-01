@@ -57,14 +57,14 @@ mod tests {
         let mut p = PlugBoard::new();
         assert_eq!(p.encode(5), Ok(5));
 
-        assert!(p.connect(5, 9).is_ok());
+        p = p.connect(5, 9).unwrap();
         assert_eq!(p.encode(5), Ok(9));
         assert_eq!(p.encode(9), Ok(5));
 
         assert!(p.connect(2, 9).is_err());
         assert!(p.connect(5, 2).is_err());
 
-        p.disconnect(5);
+        p = p.disconnect(5).unwrap();
         assert_eq!(p.encode(5), Ok(5));
         assert_eq!(p.encode(9), Ok(9));
     }
