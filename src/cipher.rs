@@ -173,14 +173,13 @@ impl SymmetricEncoder<usize> {
     }
 
     pub fn unpair(&self, v: usize) -> Result<Self, String> {
-        match self.index_of(v) {
-            Ok(idx) => {
-                let mut pairs = self.pairs.clone();
-                pairs.remove(idx);
-                self.with_pairs(pairs)
-            }
-            Err(e) => Err(e),
-        }
+        self.with_pairs(
+            self.pairs
+                .iter()
+                .filter(|p| p.contains(v).is_err()) // remove any pairs that contain v
+                .map(|p| p.clone()) // copy the pairs
+                .collect(),
+        )
     }
 }
 
