@@ -26,16 +26,12 @@ impl Iterator for Machine {
     }
 }
 
-impl DirectedCipher<char> for Machine {
+impl SymmetricCipher<char> for Machine {
     fn encode(&self, input: char) -> Result<char, String> {
         self.character_set
-            .encode(input)
-            .and_then(|i| self.encode_usize(i))
-            .and_then(|e| self.character_set.decode(e))
-    }
-
-    fn decode(&self, value: char) -> Result<char, String> {
-        self.encode(value)
+            .encode(input) // convert to usize
+            .and_then(|i| self.encode_usize(i)) // do the actual encryption
+            .and_then(|e| self.character_set.decode(e)) // convert back to char
     }
 }
 
