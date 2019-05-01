@@ -24,8 +24,9 @@ fn main() {
         .with_reflector(Reflector::flipped);
 
     println!(
-        "Machine:\n  {} rotors (random, ascending, descending)\n  flipped reflector\n  {} connected plugs\n",
+        "Machine:\n  {} rotors (random, ascending, descending) at {:?}\n  flipped reflector\n  {} connected plugs\n",
         m.rotor_set.rotors.len(),
+        m.rotor_set.positions(),
         m.plugboard.encoder.len()
     );
 
