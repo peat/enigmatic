@@ -27,7 +27,7 @@ impl Iterator for Rotor {
     fn next(&mut self) -> Option<Self> {
         match self.set_position(self.position + 1) {
             // advance by one
-            Ok(_) => Some(self.clone()),
+            Ok(n) => Some(n),
             Err(_) => None,
         }
     }
@@ -82,7 +82,7 @@ mod tests {
         // see how it goes with incrementing the position
         for p in 0..r.len() {
             for i in 0..r.len() {
-                r.set_position(p);
+                r = r.set_position(p).unwrap();
                 assert!(can_roundtrip(&r, i));
             }
         }

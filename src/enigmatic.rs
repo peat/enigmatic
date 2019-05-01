@@ -5,14 +5,7 @@ pub struct Enigmatic {}
 
 impl Enigmatic {
     pub fn encode_str(m: &mut Machine, input: &str) -> Result<String, String> {
-        input.chars().map(|c| Self::encode_char(m, c)).collect()
-    }
-
-    pub fn encode_char(m: &mut Machine, input: char) -> Result<char, String> {
-        match m.next() {
-            None => Err("Machine iteration failed!".to_owned()),
-            Some(n) => n.encode(input),
-        }
+        input.chars().map(|c| m.next().unwrap().encode(c)).collect()
     }
 }
 

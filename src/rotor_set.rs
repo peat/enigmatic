@@ -11,7 +11,7 @@ impl Iterator for RotorSet {
     fn next(&mut self) -> Option<Self> {
         // always advance the first rotor
         let mut advance_next = true;
-        for r in &mut self.rotors {
+        for r in self.rotors.iter_mut() {
             if advance_next {
                 *r = r.next().unwrap();
                 advance_next = false;
@@ -71,7 +71,7 @@ impl RotorSet {
     }
 
     pub fn set_positions(&self, positions: &[usize]) -> Result<Self, String> {
-        // merge the positions with rotors
+        // combine the positions with rotors
         let merged = positions.iter().zip(self.rotors.iter());
 
         // create a new set of rotors in those positions

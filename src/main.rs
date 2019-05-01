@@ -37,6 +37,7 @@ fn main() {
     };
 
     print!("{:?} -> ", encoded);
+    m = m.reset().unwrap();
 
     let decoded = match Enigmatic::encode_str(&mut m, &encoded) {
         Ok(s) => s,
