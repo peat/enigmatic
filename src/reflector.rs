@@ -12,18 +12,21 @@ impl SymmetricCipher<usize> for Reflector {
 }
 
 impl Reflector {
+    #[allow(dead_code)]
     pub fn mirror(size: usize) -> Self {
         Self {
             encoder: SymmetricEncoder::mirror(size),
         }
     }
 
+    #[allow(dead_code)]
     pub fn flipped(size: usize) -> Self {
         Self {
             encoder: SymmetricEncoder::flipped(size),
         }
     }
 
+    #[allow(dead_code)]
     pub fn random(size: usize) -> Self {
         Self {
             encoder: SymmetricEncoder::random(size),

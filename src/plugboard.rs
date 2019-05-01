@@ -25,6 +25,7 @@ impl PlugBoard {
 
     // on success, returns the new connection; on failure,
     // returns the connection that already exists.
+    #[allow(dead_code)]
     pub fn connect(&self, a: usize, b: usize) -> Result<Self, String> {
         match self.encoder.pair(a, b) {
             Ok(encoder) => {
@@ -36,6 +37,7 @@ impl PlugBoard {
         }
     }
 
+    #[allow(dead_code)]
     pub fn disconnect(&self, a: usize) -> Result<Self, String> {
         match self.encoder.unpair(a) {
             Ok(encoder) => {
