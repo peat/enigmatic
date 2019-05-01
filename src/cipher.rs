@@ -1,4 +1,4 @@
-use rand::prelude::*;
+use rand::prelude::SliceRandom;
 
 pub trait DirectedCipher<T> {
     fn encode(&self, input: T) -> Result<T, String>;
@@ -99,6 +99,7 @@ impl SymmetricCipher<usize> for SymmetricEncoder<usize> {
     }
 }
 
+#[allow(dead_code)]
 impl SymmetricEncoder<usize> {
     pub fn with_pairs(&self, pairs: Vec<Pair<usize>>) -> Result<Self, String> {
         let mut output = self.clone();
@@ -177,7 +178,7 @@ impl SymmetricEncoder<usize> {
             self.pairs
                 .iter()
                 .filter(|p| p.contains(v).is_err()) // remove any pairs that contain v
-                .map(|p| p.clone()) // copy the pairs
+                .cloned() // copy 'em off
                 .collect(),
         )
     }
